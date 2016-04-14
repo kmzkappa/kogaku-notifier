@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    <% if @ua_android %>
+      <%= @appname %>を起動します。(Android端末のみ)
+      <% redirect @redirect_path %>
+    <% else %>
+      <% redirect @url_nhkfm %>
+    <% end %>
+  </body>
+</html>
