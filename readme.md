@@ -14,9 +14,9 @@ Task(`task.rb`)側で番組情報の取得およびユーザへの通知を行�
 Android端末の場合、トーク画面で設定をすることでアプリ版の [らじる★らじる](https://play.google.com/store/apps/details?id=jp.nhk.netradio&hl=ja) または
 [Raziko](https://play.google.com/store/apps/details?id=com.gmail.jp.raziko.radiko&hl=ja) を起動することができます。
 
-## 必要ライブラリ
+## ライブラリ
 バッチ側の実行には`PhantomJS`が必要です。  
-これは[NHKの番組サイト](http://www4.nhk.or.jp/kogaku/")から番組情報を取得しており、サイトではJavaScriptを使用して番組の詳細をレンダリングしているためです。  
+これは[NHKの番組サイト](http://www4.nhk.or.jp/kogaku/)から番組情報を取得しており、サイトではJavaScriptを使用して番組の詳細をレンダリングしているためです。  
 （番組情報詳細の取得方法として「らじる★らじる」で使用されているAPIなどが存在しますが、利用条件を調べられなかったため使用していません。）
 
 ## 注意
