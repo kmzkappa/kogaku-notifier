@@ -8,15 +8,22 @@ require './models/user'
 
 ActiveRecord::Base.establish_connection(ENV['DATABASE_URL'])
 
+# 待ち受け・応答処理
 class App < Sinatra::Base
   configure :production, :development do
     enable :logging
   end
 
-  # メッセージ受信、友達登録時
+  NHK_FM_URL = "http://www3.nhk.or.jp/netradio/player/index.html?ch=fm&area=tokyo"
+  NHKNETRADIO_INTENT_TO = "nhknetradio://nhk.jp/netradio"
+  RAZIKO_INTENT_TO = "intent://#Intent;scheme=tagmanager.c.com.gmail.jp.raziko.radiko;package=com.gmail.jp.raziko.radiko;end"
+
+
+  # メッセージ受信、友達登録・ブロック時
   post '/linebot/callback' do
     params = JSON.parse(request.body.read)
 
+    # 友達登録・ブロック時の分岐用
     change_friend_status = :none
 
     # TODO: 複数人のデータが同時に来る場合がありそう
@@ -28,7 +35,7 @@ class App < Sinatra::Base
         change_friend_status = :block
       end
 
-      user_text = ""
+      user_text = "" # ユーザの発言メッセージ
       if change_friend_status == :none
         user_mid  = msg['content']['from']
         user_text = msg['content']['text']
@@ -40,6 +47,10 @@ class App < Sinatra::Base
       
       # コマンド種別の判定
       user_text_type = analyze_text(user_text, change_friend_status)
+      # 起動アプリ種別
+      # 0: ブラウザで開く
+      # 1: らじる★らじる
+      # 2: Raziko
       application_type = ""
       if user_text_type == :setapp
         application_type = user_text.tr("０-２", "0-2").to_i
@@ -57,13 +68,13 @@ class App < Sinatra::Base
 
   # 再生URLを踏んだとき
   get '/openapp/:appname' do
-    NHK_FM_URL = "http://www3.nhk.or.jp/netradio/player/index.html?ch=fm&area=tokyo"
-    NHKNETRADIO_INTENT_TO = "nhknetradio://nhk.jp/netradio"
-    RAZIKO_INTENT_TO = "intent://#Intent;scheme=tagmanager.c.com.gmail.jp.raziko.radiko;package=com.gmail.jp.raziko.radiko;end"
+    unless ua_android?(request)
+      # ブラウザで開く
+      redirect NHK_FM_URL and return
+    end
 
-    redirect NHK_FM_URL unless ua_android?(request) and return
-
-    case :appname
+    # Android端末のみ、アプリで開く
+    case params[:appname]
     when "nhknetradio"
       redirect NHKNETRADIO_INTENT_TO
     when "raziko"
@@ -78,9 +89,9 @@ class App < Sinatra::Base
   # ユーザ入力コマンドを解析
   def analyze_text(user_text, change_friend_status)
     if change_friend_status == :add
-      return :add
+      return :add # TODO: ここダサい
     elsif change_friend_status == :block
-      return :block
+      return :block # TODO: ここも。
     elsif user_text =~ /^[\s　]*登録[\s　]*$/
       return :registration
     elsif user_text =~ /^[\s　]*解除[\s　]*$/
@@ -117,6 +128,8 @@ class App < Sinatra::Base
       end
       return "番組情報の通知を解除しました。"
     when :configure
+      # 「設定」の場合はメッセージの返答のみ
+      # 実際の設定は 0～2 入力時に行う
       str = <<'EOS'
 番組を再生するアプリケーションを設定します(Android端末のみ)。
 「らじる★らじる」を使用する場合は「1」
@@ -136,7 +149,7 @@ EOS
         return "再生用リンクを「らじる★らじる」に設定しました。"
       elsif apptype == 2
         return "再生用リンクを「Raziko」に設定しました。"
-      else
+      else # if 0
         return "再生用リンクをブラウザ用に設定しました。"
       end
     when :add
@@ -158,6 +171,7 @@ EOS
 EOS
       return str
     when :block
+      # ブロックされたユーザは配信対象外にする
       user = User.where(mid: user_mid).first
       if user
         user.enabled = false
