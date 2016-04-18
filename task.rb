@@ -79,6 +79,7 @@ class Task
 
   # メッセージ送信処理
   def send_message(message, mids)
+    return if mids.empty?
     res_content = {
       to: mids,
       toChannel: 1383378250, # Fixed  value
