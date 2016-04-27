@@ -33,7 +33,7 @@ class Task
     # ページ表示（JSが完了）したらタイトル・放送内容を取得
     @program_title = page.css(".program-title").text
     page.search('br').each {|br| br.replace("\n")}
-    @program_description = page.css(".program-description").css("p")[1].text
+    @program_description = page.css(".program-description").css("p").last.text
   end
 
   # 番組情報を登録者に配信
